@@ -4,179 +4,179 @@ import type { ChartOptions } from 'chart.js';
 
 Chart.register(...registerables);
 
-// --- 1. SYSTEM BOOT SEQUENCER ---
-window.addEventListener('DOMContentLoaded', () => {
-  const loader = document.getElementById('boot-loader');
-  const appContainer = document.getElementById('app');
-
-  setTimeout(() => {
-    if (loader) loader.style.opacity = '0';
-    
-    setTimeout(() => {
-      if (loader) loader.style.display = 'none';
-      if (appContainer) {
-        appContainer.classList.remove('hidden');
-        appContainer.style.opacity = '1';
-      }
-      
-      // Activate animations sequentially
-      document.querySelectorAll('.animate-in').forEach(el => {
-        el.classList.add('active');
-      });
-      
-      initializeCommandCenter();
-    }, 600);
-  }, 1000);
-});
-
-// --- 2. EXPERT TELEMETRY DATA GENERATION ---
-interface LifeTelemetry {
+// --- 1. DATA ARCHITECTURE & LOCAL STORAGE ---
+interface DailyMetrics {
   date: string;
-  hoursCoded: number;
-  sleepHours: number;
-  waterLiters: number;
+  coding: number;
+  sleep: number;
+  gym: number;
+  water: number;
+  protein: number;
+  carbs: number;
+  family: number;
 }
 
-const analyticsDataset: LifeTelemetry[] = Array.from({ length: 12 }, (_, i) => ({
-  date: `D-${String(i + 1).padStart(2, '0')}`,
-  hoursCoded: 4 + Math.random() * 5,
-  sleepHours: 6 + Math.random() * 2,
-  waterLiters: 2 + Math.random() * 2,
-}));
+// Generate a 7-day trailing log. The last item is TODAY (live data).
+function initializeState(): DailyMetrics[] {
+  const savedData = localStorage.getItem('eliteTelemetry');
+  if (savedData) return JSON.parse(savedData);
 
-// --- 3. CORE DISPLAY CONTROL ARCHITECTURE ---
-function initializeCommandCenter() {
-  Chart.defaults.color = '#8A8D9E';
-  Chart.defaults.font.family = "'Inter', sans-serif";
-  
-  const targetGridLines = {
-    color: 'rgba(255, 255, 255, 0.03)',
-    borderColor: 'transparent',
-    drawTicks: false
-  };
+  return Array.from({ length: 7 }, (_, i) => ({
+    date: `Day -${6 - i}`,
+    coding: i === 6 ? 0 : 4 + Math.random() * 4,
+    sleep: i === 6 ? 0 : 5 + Math.random() * 3,
+    gym: i === 6 ? 0 : Math.random() * 2,
+    water: i === 6 ? 0 : 1.5 + Math.random() * 2,
+    protein: i === 6 ? 0 : 120 + Math.random() * 50,
+    carbs: i === 6 ? 0 : 180 + Math.random() * 80,
+    family: i === 6 ? 0 : 30 + Math.random() * 120,
+  }));
+}
 
-  const sharedConfigOptions: ChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top',
-        align: 'end',
-        labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 6, font: { size: 11, weight: '500' } }
-      },
-      tooltip: {
-        backgroundColor: '#0A0B10',
-        titleFont: { size: 12, family: 'Inter', weight: 'bold' },
-        bodyFont: { size: 12, family: 'Inter' },
-        padding: 12,
-        cornerRadius: 8,
-        borderColor: 'rgba(255, 255, 255, 0.08)',
-        borderWidth: 1,
-        displayColors: true
+let metricsState = initializeState();
+let currentOperator = localStorage.getItem('operatorName') || '';
+
+// --- 2. GLOBAL CHART INSTANCES ---
+let timeChart: Chart;
+let waterChart: Chart;
+let macroChart: Chart;
+
+// --- 3. SYSTEM BOOTSTRAP & DOM BINDING ---
+window.addEventListener('DOMContentLoaded', () => {
+  const gate = document.getElementById('identity-gate');
+  const app = document.getElementById('app');
+  const operatorInput = document.getElementById('operator-name-input') as HTMLInputElement;
+  const initBtn = document.getElementById('init-system-btn');
+  const displayOperator = document.getElementById('display-operator');
+
+  if (currentOperator) {
+    if (gate) gate.style.display = 'none';
+    if (app) app.classList.remove('hidden');
+    if (displayOperator) displayOperator.innerText = currentOperator;
+    mountEngine();
+  }
+
+  initBtn?.addEventListener('click', () => {
+    const val = operatorInput.value.trim();
+    if (val) {
+      currentOperator = val;
+      localStorage.setItem('operatorName', val);
+      if (displayOperator) displayOperator.innerText = currentOperator;
+      if (gate) {
+        gate.style.opacity = '0';
+        setTimeout(() => { gate.style.display = 'none'; app?.classList.remove('hidden'); mountEngine(); }, 600);
       }
-    },
-    scales: {
-      x: { grid: targetGridLines },
-      y: { grid: targetGridLines, beginAtZero: true }
     }
+  });
+
+  setupHUDControls();
+});
+
+// --- 4. THE COMMAND HUD LOGIC ---
+function setupHUDControls() {
+  const hud = document.getElementById('command-hud');
+  document.getElementById('open-hud-btn')?.addEventListener('click', () => hud?.classList.remove('hidden'));
+  document.getElementById('close-hud-btn')?.addEventListener('click', () => hud?.classList.add('hidden'));
+
+  const today = metricsState[6]; // Live mutating index
+
+  // Bind inputs to state variables
+  const inputs = [
+    { id: 'input-coding', valId: 'val-coding', key: 'coding' },
+    { id: 'input-sleep', valId: 'val-sleep', key: 'sleep' },
+    { id: 'input-gym', valId: 'val-gym', key: 'gym' },
+    { id: 'input-water', valId: 'val-water', key: 'water' },
+    { id: 'input-protein', valId: null, key: 'protein' },
+    { id: 'input-carbs', valId: null, key: 'carbs' },
+    { id: 'input-family', valId: null, key: 'family' }
+  ];
+
+  inputs.forEach(binding => {
+    const el = document.getElementById(binding.id) as HTMLInputElement;
+    if (el) {
+      el.value = today[binding.key as keyof DailyMetrics].toString();
+      if (binding.valId) {
+        document.getElementById(binding.valId)!.innerText = el.value;
+      }
+      
+      // ZERO-LATENCY EVENT LISTENER
+      el.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        const numVal = parseFloat(target.value) || 0;
+        
+        // Mutate State
+        (metricsState[6] as any)[binding.key] = numVal;
+        if (binding.valId) document.getElementById(binding.valId)!.innerText = numVal.toString();
+        
+        // Save & Redraw Graphics Instantly
+        localStorage.setItem('eliteTelemetry', JSON.stringify(metricsState));
+        updateGraphicsEngine();
+      });
+    }
+  });
+}
+
+// --- 5. CHART COMPILATION CORE ---
+function mountEngine() {
+  const gridLines = { color: 'rgba(255, 255, 255, 0.05)', drawTicks: false };
+  const globalOpts: ChartOptions = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#FFF', font: { family: 'Inter' } } } },
+    scales: { x: { grid: gridLines }, y: { grid: gridLines, beginAtZero: true } }
   };
 
-  // --- RENDERING CONFIGURATION 1: GRAPHING LINE LINES ---
-  const timeCanvas = document.getElementById('timeMatrixChart') as HTMLCanvasElement;
-  if (timeCanvas) {
-    const ctx = timeCanvas.getContext('2d')!;
-    const codingFill = ctx.createLinearGradient(0, 0, 0, 300);
-    codingFill.addColorStop(0, 'rgba(255, 26, 105, 0.35)');
-    codingFill.addColorStop(1, 'rgba(255, 26, 105, 0.0)');
+  const timeCtx = document.getElementById('timeMatrixChart') as HTMLCanvasElement;
+  timeChart = new Chart(timeCtx, {
+    type: 'line',
+    data: {
+      labels: metricsState.map(d => d.date),
+      datasets: [
+        { label: 'Coding (Hrs)', data: metricsState.map(d => d.coding), borderColor: '#FF1A69', tension: 0.4, borderWidth: 3 },
+        { label: 'Sleep (Hrs)', data: metricsState.map(d => d.sleep), borderColor: '#00F0FF', tension: 0.4, borderWidth: 3 },
+        { label: 'Gym (Hrs)', data: metricsState.map(d => d.gym), borderColor: '#10B981', tension: 0.4, borderDash: [5, 5] }
+      ]
+    },
+    options: globalOpts
+  });
 
-    const sleepFill = ctx.createLinearGradient(0, 0, 0, 300);
-    sleepFill.addColorStop(0, 'rgba(0, 240, 255, 0.25)');
-    sleepFill.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
+  const waterCtx = document.getElementById('hydrologyBarChart') as HTMLCanvasElement;
+  waterChart = new Chart(waterCtx, {
+    type: 'bar',
+    data: {
+      labels: metricsState.map(d => d.date),
+      datasets: [{ label: 'Water (Liters)', data: metricsState.map(d => d.water), backgroundColor: '#00F0FF', borderRadius: 6 }]
+    },
+    options: globalOpts
+  });
 
-    new Chart(timeCanvas, {
-      type: 'line',
-      data: {
-        labels: analyticsDataset.map(d => d.date),
-        datasets: [
-          {
-            label: 'Deep Coding (Hrs)',
-            data: analyticsDataset.map(d => d.hoursCoded),
-            borderColor: '#FF1A69',
-            backgroundColor: codingFill,
-            borderWidth: 2.5,
-            fill: true,
-            tension: 0.4,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointHoverBackgroundColor: '#FF1A69'
-          },
-          {
-            label: 'Sleep Rest Cycle (Hrs)',
-            data: analyticsDataset.map(d => d.sleepHours),
-            borderColor: '#00F0FF',
-            backgroundColor: sleepFill,
-            borderWidth: 2.5,
-            fill: true,
-            tension: 0.4,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointHoverBackgroundColor: '#00F0FF'
-          }
-        ]
-      },
-      options: sharedConfigOptions
-    });
+  const macroCtx = document.getElementById('macrosDoughnutChart') as HTMLCanvasElement;
+  macroChart = new Chart(macroCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Protein', 'Carbs', 'Family Time (Scale Mins)'],
+      datasets: [{
+        data: [metricsState[6].protein, metricsState[6].carbs, metricsState[6].family],
+        backgroundColor: ['#FF1A69', '#00F0FF', '#8A2BE2'], borderWidth: 0
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { color: '#FFF' } } } }
+  });
+}
+
+// --- 6. HOT RELOAD VECTOR ENGINE ---
+function updateGraphicsEngine() {
+  if (timeChart) {
+    timeChart.data.datasets[0].data = metricsState.map(d => d.coding);
+    timeChart.data.datasets[1].data = metricsState.map(d => d.sleep);
+    timeChart.data.datasets[2].data = metricsState.map(d => d.gym);
+    timeChart.update('active');
   }
-
-  // --- RENDERING CONFIGURATION 2: BAR TRACKS ---
-  const waterCanvas = document.getElementById('hydrologyBarChart') as HTMLCanvasElement;
-  if (waterCanvas) {
-    const ctx = waterCanvas.getContext('2d')!;
-    const barFill = ctx.createLinearGradient(0, 0, 0, 300);
-    barFill.addColorStop(0, '#00F0FF');
-    barFill.addColorStop(1, 'rgba(0, 240, 255, 0.05)');
-
-    new Chart(waterCanvas, {
-      type: 'bar',
-      data: {
-        labels: analyticsDataset.map(d => d.date),
-        datasets: [{
-          label: 'Fluid Consumption (Liters)',
-          data: analyticsDataset.map(d => d.waterLiters),
-          backgroundColor: barFill,
-          borderRadius: 4,
-          borderSkipped: false
-        }]
-      },
-      options: sharedConfigOptions
-    });
+  if (waterChart) {
+    waterChart.data.datasets[0].data = metricsState.map(d => d.water);
+    waterChart.update('active');
   }
-
-  // --- RENDERING CONFIGURATION 3: MACRO DONUT ---
-  const macroCanvas = document.getElementById('macrosDoughnutChart') as HTMLCanvasElement;
-  if (macroCanvas) {
-    new Chart(macroCanvas, {
-      type: 'doughnut',
-      data: {
-        labels: ['Protein', 'Carbohydrates', 'Essential Fats'],
-        datasets: [{
-          data: [175, 240, 70],
-          backgroundColor: ['#FF1A69', '#00F0FF', '#8A2BE2'],
-          borderWidth: 0,
-          hoverOffset: 8
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '78%',
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: { usePointStyle: true, boxWidth: 8, padding: 20, color: '#FFFFFF' }
-          }
-        }
-      }
-    });
+  if (macroChart) {
+    macroChart.data.datasets[0].data = [metricsState[6].protein, metricsState[6].carbs, metricsState[6].family];
+    macroChart.update('active');
   }
 }
