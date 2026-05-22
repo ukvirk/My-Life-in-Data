@@ -1,13 +1,47 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>my-life-in-data</title>
+    <title>My Life In Data | Telemetry Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <aside class="dashboard-sidebar">
+        <header class="profile-header">
+          <h2>Life Telemetry</h2>
+          <p>Version 1.0.0 // Raw Data Stream</p>
+        </header>
+        <div class="profile-meta-deck">
+          <div class="meta-stat-strip"><span>System Status:</span><span class="status-indicator">Active</span></div>
+          <div class="meta-stat-strip"><span>Metrics Monitored:</span><span>9 Telemetry Tracks</span></div>
+        </div>
+      </aside>
+      <main class="bento-workspace">
+        <div class="bento-grid-container">
+          <div class="bento-card span-double">
+            <div class="card-header-block"><h3>Time Metrics Matrix</h3><p>Hours Coded vs. Sleep vs. Screen Time</p></div>
+            <div class="chart-canvas-wrapper"><canvas id="timeMatrixChart"></canvas></div>
+          </div>
+          <div class="bento-card">
+            <div class="card-header-block"><h3>Macro Breakdown</h3><p>Protein, Carbohydrates, and Fats (Grams)</p></div>
+            <div class="chart-canvas-wrapper"><canvas id="macrosDoughnutChart"></canvas></div>
+          </div>
+          <div class="bento-card">
+            <div class="card-header-block"><h3>Hydrology Log</h3><p>Daily Water Volumetric Thresholds (Liters)</p></div>
+            <div class="chart-canvas-wrapper"><canvas id="hydrologyBarChart"></canvas></div>
+          </div>
+          <div class="bento-card span-full">
+            <div class="card-header-block"><h3>Biometric Performance Index</h3><p>Recovery (Gym/Yoga/Family) vs. Focus Efficiency</p></div>
+            <div class="chart-canvas-wrapper scatter-wrapper"><canvas id="performanceScatterChart"></canvas></div>
+          </div>
+        </div>
+      </main>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
