@@ -3,108 +3,90 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Elite Telemetry Console</title>
+    <title>Apex Telemetry | Command Center</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-
-    <div id="identity-gate" class="overlay-matrix">
-      <div class="glass-panel auth-panel">
-        <h2>UPLINK REQUIRED</h2>
-        <p>Enter Operator Designation</p>
-        <input type="text" id="operator-name-input" placeholder="e.g. Manto" autocomplete="off" />
-        <button id="init-system-btn">INITIALIZE CORE</button>
-      </div>
-    </div>
-
-    <div id="command-hud" class="floating-hud hidden">
+    <div id="command-hud" class="hud-panel">
       <div class="hud-header">
-        <h3>Live Input Deck</h3>
-        <button id="close-hud-btn">X</button>
+        <h3>Data Ingestion</h3>
+        <button id="toggle-hud" class="btn-ghost">Close [ESC]</button>
       </div>
-      <div class="hud-body">
+      <div class="hud-form">
         <div class="input-group">
-          <label>System Build / Coding (Hrs)</label>
-          <input type="range" id="input-coding" min="0" max="16" step="0.5" value="0">
-          <span class="value-display" id="val-coding">0</span>
+          <label>Date Identity</label>
+          <input type="text" id="in-date" placeholder="e.g. May 24" />
         </div>
         <div class="input-group">
-          <label>Rest Cycle / Sleep (Hrs)</label>
-          <input type="range" id="input-sleep" min="0" max="12" step="0.5" value="0">
-          <span class="value-display" id="val-sleep">0</span>
+          <label>Deep Code (Hrs)</label>
+          <input type="number" id="in-code" step="0.5" placeholder="0.0" />
         </div>
         <div class="input-group">
-          <label>Physical Routine / Gym (Hrs)</label>
-          <input type="range" id="input-gym" min="0" max="4" step="0.25" value="0">
-          <span class="value-display" id="val-gym">0</span>
+          <label>Rest Cycle (Hrs)</label>
+          <input type="number" id="in-sleep" step="0.5" placeholder="0.0" />
         </div>
         <div class="input-group">
-          <label>Hydrology (Liters)</label>
-          <input type="range" id="input-water" min="0" max="6" step="0.5" value="0">
-          <span class="value-display" id="val-water">0</span>
+          <label>Hydration (Liters)</label>
+          <input type="number" id="in-water" step="0.1" placeholder="0.0" />
         </div>
         <div class="input-group">
-          <label>Protein Density (Grams)</label>
-          <input type="number" id="input-protein" min="0" max="300" value="0">
+          <label>Gym Routine (Hrs)</label>
+          <input type="number" id="in-gym" step="0.5" placeholder="0.0" />
         </div>
-        <div class="input-group">
-          <label>Carbohydrate Mass (Grams)</label>
-          <input type="number" id="input-carbs" min="0" max="500" value="0">
-        </div>
-        <div class="input-group">
-          <label>Kinship / Family (Minutes)</label>
-          <input type="number" id="input-family" min="0" max="600" value="0">
-        </div>
+        <button id="btn-commit" class="btn-primary">COMMIT RECORD</button>
       </div>
     </div>
 
-    <div id="app" class="hidden">
+    <div id="app">
       <aside class="dashboard-sidebar">
         <header class="profile-header">
-          <h2 id="display-operator">GUEST</h2>
-          <div class="version-tag">OS V_2.0.26</div>
+          <h2 id="user-identity">Operator</h2>
+          <div class="version-tag">OS V_3.0.0</div>
         </header>
         <div class="profile-meta-deck">
-          <button id="open-hud-btn" class="action-btn">OPEN COMMAND HUD</button>
-          <div class="meta-stat-strip" style="margin-top: 20px;">
-            <span class="label">System State:</span>
-            <span class="status-indicator">Synched</span>
-          </div>
+          <button id="btn-open-hud" class="btn-primary full-width">+ LOG NEW DAY</button>
+          <button id="btn-purge" class="btn-danger full-width" style="margin-top:10px;">PURGE DATA</button>
+        </div>
+        
+        <div class="diagnostic-panel" style="margin-top:40px;">
+          <h3 style="font-size:12px; color:#8A8D9E; margin-bottom:15px;">LATEST DIAGNOSTICS</h3>
+          <div id="diag-feed">
+            </div>
         </div>
       </aside>
 
       <main class="bento-workspace">
         <header class="workspace-header">
           <h1>Command Center</h1>
-          <p>Real-time telemetry and biometric mutation tracking.</p>
+          <p>Historical array mapping and biological evaluation.</p>
         </header>
         
         <div class="bento-grid-container">
           <div class="bento-card span-double">
             <div class="card-header-block">
               <h3>Time Allocation Matrix</h3>
-              <p>Deep Work vs Recovery vs Physical</p>
+              <p>Chronological work vs rest cycles</p>
             </div>
             <div class="chart-canvas-wrapper"><canvas id="timeMatrixChart"></canvas></div>
           </div>
 
           <div class="bento-card">
             <div class="card-header-block">
-              <h3>Hydration Log</h3>
-              <p>Volumetric Output</p>
+              <h3>Hydration Telemetry</h3>
+              <p>WHO Baseline: 2.7L</p>
             </div>
             <div class="chart-canvas-wrapper"><canvas id="hydrologyBarChart"></canvas></div>
           </div>
-
+          
           <div class="bento-card">
             <div class="card-header-block">
-              <h3>Macro Engine</h3>
-              <p>Nutritional Density Split</p>
+              <h3>Physical Conditioning</h3>
+              <p>Gym duration output</p>
             </div>
-            <div class="chart-canvas-wrapper"><canvas id="macrosDoughnutChart"></canvas></div>
+            <div class="chart-canvas-wrapper"><canvas id="gymRadarChart"></canvas></div>
           </div>
         </div>
       </main>

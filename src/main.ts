@@ -1,140 +1,147 @@
 import './style.css';
-import { Chart, registerables, ChartOptions } from 'chart.js';
+import { Chart, registerables } from 'chart.js';
+import type { ChartOptions } from 'chart.js';
 
 Chart.register(...registerables);
 
-// --- 1. DIRECT-MOUNT BOOT ENGINE ---
-function executeBootSequence() {
-  const loader = document.getElementById('boot-loader');
-  const appContainer = document.getElementById('app');
-
-  setTimeout(() => {
-    if (loader) loader.style.opacity = '0';
-    
-    setTimeout(() => {
-      if (loader) loader.style.display = 'none';
-      if (appContainer) appContainer.classList.remove('hidden');
-      
-      // Trigger CSS stagger animations
-      document.querySelectorAll('.animate-in').forEach(el => {
-        el.classList.add('active');
-      });
-      
-      initializeCommandCenter();
-    }, 800);
-  }, 1200); // 1.2s Cinematic window holding time
+// --- 1. DATA INFRASTRUCTURE ---
+interface TelemetryRecord {
+  date: string; code: number; sleep: number; water: number; gym: number;
 }
 
-// Fire sequence instantly on module mount
-executeBootSequence();
+const DB_KEY = 'apex_telemetry_db';
+let systemData: TelemetryRecord[] = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
 
-// --- 2. EXPERT DATA LOGIC ---
-interface LifeTelemetry {
-  date: string; hoursCoded: number; sleepHours: number; waterLiters: number;
+// Seed baseline if empty
+if (systemData.length === 0) {
+  systemData = [
+    { date: 'Day 1', code: 5.5, sleep: 6.0, water: 2.0, gym: 1.0 },
+    { date: 'Day 2', code: 8.0, sleep: 7.5, water: 3.2, gym: 1.5 }
+  ];
+  saveLedger();
 }
 
-const analyticsDataset: LifeTelemetry[] = Array.from({ length: 14 }, (_, i) => ({
-  date: `D-0${i + 1}`,
-  hoursCoded: 4 + Math.random() * 6,
-  sleepHours: 5 + Math.random() * 3,
-  waterLiters: 1.5 + Math.random() * 2.5,
-}));
+function saveLedger() {
+  localStorage.setItem(DB_KEY, JSON.stringify(systemData));
+}
 
-// --- 3. PRO GRAPHICS INITIALIZATION ---
-function initializeCommandCenter() {
-  Chart.defaults.color = '#8A8D9E';
-  Chart.defaults.font.family = 'Inter';
+// --- 2. GLOBAL CHART REFERENCES ---
+let timeChart: Chart | null = null;
+let waterChart: Chart | null = null;
+let gymChart: Chart | null = null;
+
+// --- 3. DIAGNOSTIC EVALUATION ENGINE ---
+function evaluateDiagnostics() {
+  const feed = document.getElementById('diag-feed')!;
+  if (systemData.length === 0) { feed.innerHTML = ''; return; }
   
-  const gridConfig = {
-    color: 'rgba(255, 255, 255, 0.03)',
-    drawBorder: false,
-  };
+  const latest = systemData[systemData.length - 1];
+  
+  // WHO / Biological Baselines
+  const waterStatus = latest.water >= 2.7 ? 
+    `<span class="status-optimal">OPTIMAL (${latest.water}L)</span>` : 
+    `<span class="status-critical">CRITICAL (${latest.water}L)</span>`;
+    
+  const sleepStatus = latest.sleep >= 7.0 ? 
+    `<span class="status-optimal">OPTIMAL (${latest.sleep}H)</span>` : 
+    `<span class="status-critical">DEFICIT (${latest.sleep}H)</span>`;
 
-  const commonOptions: ChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
-    plugins: {
-      legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 6, font: { weight: 'bold' } } },
-      tooltip: {
-        backgroundColor: 'rgba(10, 11, 16, 0.9)', titleFont: { size: 13, family: 'Inter' },
-        bodyFont: { size: 12, family: 'Inter' }, padding: 12, cornerRadius: 8,
-        borderColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1
-      }
-    }
-  };
-
-  // CHART 1: TIME MATRIX
-  const timeCanvas = document.getElementById('timeMatrixChart') as HTMLCanvasElement;
-  if (timeCanvas) {
-    const ctx = timeCanvas.getContext('2d')!;
-    const codeGradient = ctx.createLinearGradient(0, 0, 0, 400);
-    codeGradient.addColorStop(0, 'rgba(255, 26, 105, 0.5)');
-    codeGradient.addColorStop(1, 'rgba(255, 26, 105, 0.0)');
-
-    const sleepGradient = ctx.createLinearGradient(0, 0, 0, 400);
-    sleepGradient.addColorStop(0, 'rgba(0, 240, 255, 0.3)');
-    sleepGradient.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
-
-    new Chart(timeCanvas, {
-      type: 'line',
-      data: {
-        labels: analyticsDataset.map(d => d.date),
-        datasets: [
-          {
-            label: 'System Build (Hrs)', data: analyticsDataset.map(d => d.hoursCoded),
-            borderColor: '#FF1A69', backgroundColor: codeGradient,
-            borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 6
-          },
-          {
-            label: 'Recovery (Hrs)', data: analyticsDataset.map(d => d.sleepHours),
-            borderColor: '#00F0FF', backgroundColor: sleepGradient,
-            borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 6
-          }
-        ]
-      },
-      options: { ...commonOptions, scales: { x: { grid: gridConfig }, y: { grid: gridConfig, beginAtZero: true } } }
-    });
-  }
-
-  // CHART 2: HYDROLOGY
-  const waterCanvas = document.getElementById('hydrologyBarChart') as HTMLCanvasElement;
-  if (waterCanvas) {
-    const ctx = waterCanvas.getContext('2d')!;
-    const barGradient = ctx.createLinearGradient(0, 0, 0, 400);
-    barGradient.addColorStop(0, '#00F0FF');
-    barGradient.addColorStop(1, 'rgba(0, 240, 255, 0.1)');
-
-    new Chart(waterCanvas, {
-      type: 'bar',
-      data: {
-        labels: analyticsDataset.map(d => d.date),
-        datasets: [{
-          label: 'Volumetric Output (L)', data: analyticsDataset.map(d => d.waterLiters),
-          backgroundColor: barGradient, borderRadius: 6, borderSkipped: false
-        }]
-      },
-      options: { ...commonOptions, plugins: { legend: { display: false } }, scales: { x: { grid: gridConfig }, y: { grid: gridConfig } } }
-    });
-  }
-
-  // CHART 3: MACRO DONUT
-  const macroCanvas = document.getElementById('macrosDoughnutChart') as HTMLCanvasElement;
-  if (macroCanvas) {
-    new Chart(macroCanvas, {
-      type: 'doughnut',
-      data: {
-        labels: ['Protein', 'Carbs', 'Fats'],
-        datasets: [{
-          data: [180, 220, 65],
-          backgroundColor: ['#00F0FF', '#FF1A69', '#8A2BE2'],
-          borderWidth: 0, hoverOffset: 10
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false, cutout: '75%',
-        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, color: '#FFFFFF' } } }
-      }
-    });
-  }
+  feed.innerHTML = `
+    <div class="diag-row"><span>HYDRATION (WHO: 2.7L)</span> ${waterStatus}</div>
+    <div class="diag-row"><span>REST CYCLE (MIN: 7H)</span> ${sleepStatus}</div>
+    <div class="diag-row"><span>LATEST LOG</span> <span style="color:#FFF">${latest.date}</span></div>
+  `;
 }
+
+// --- 4. GRAPHICS RENDER LOOP ---
+function renderEngines() {
+  const dates = systemData.map(d => d.date);
+  const commonOptions: ChartOptions = {
+    responsive: true, maintainAspectRatio: false,
+    scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } },
+    plugins: { legend: { labels: { color: '#FFF', font: { family: 'Inter' } } } }
+  };
+
+  // TIME MATRIX
+  const timeCtx = (document.getElementById('timeMatrixChart') as HTMLCanvasElement).getContext('2d')!;
+  if (timeChart) timeChart.destroy();
+  timeChart = new Chart(timeCtx, {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [
+        { label: 'Deep Code', data: systemData.map(d => d.code), borderColor: '#FF1A69', tension: 0.3 },
+        { label: 'Rest Cycle', data: systemData.map(d => d.sleep), borderColor: '#00F0FF', tension: 0.3 }
+      ]
+    },
+    options: commonOptions
+  });
+
+  // HYDROLOGY BAR
+  const waterCtx = (document.getElementById('hydrologyBarChart') as HTMLCanvasElement).getContext('2d')!;
+  if (waterChart) waterChart.destroy();
+  
+  // Dynamic coloring based on WHO benchmark
+  const waterColors = systemData.map(d => d.water >= 2.7 ? '#00F0FF' : '#FF3333');
+  
+  waterChart = new Chart(waterCtx, {
+    type: 'bar',
+    data: {
+      labels: dates,
+      datasets: [{ label: 'Water (L)', data: systemData.map(d => d.water), backgroundColor: waterColors }]
+    },
+    options: commonOptions
+  });
+
+  // GYM RADAR/LINE
+  const gymCtx = (document.getElementById('gymRadarChart') as HTMLCanvasElement).getContext('2d')!;
+  if (gymChart) gymChart.destroy();
+  gymChart = new Chart(gymCtx, {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [{ label: 'Gym Output (Hrs)', data: systemData.map(d => d.gym), borderColor: '#8A2BE2', fill: true, backgroundColor: 'rgba(138, 43, 226, 0.2)' }]
+    },
+    options: commonOptions
+  });
+
+  evaluateDiagnostics();
+}
+
+// --- 5. EVENT BINDING & HUD CONTROLS ---
+window.addEventListener('DOMContentLoaded', () => {
+  renderEngines();
+
+  const hud = document.getElementById('command-hud')!;
+  document.getElementById('btn-open-hud')!.addEventListener('click', () => hud.classList.add('active'));
+  document.getElementById('toggle-hud')!.addEventListener('click', () => hud.classList.remove('active'));
+  
+  // Close on ESC key
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hud.classList.remove('active'); });
+
+  // Commit New Data
+  document.getElementById('btn-commit')!.addEventListener('click', () => {
+    const dateVal = (document.getElementById('in-date') as HTMLInputElement).value || `Day ${systemData.length + 1}`;
+    const codeVal = parseFloat((document.getElementById('in-code') as HTMLInputElement).value) || 0;
+    const sleepVal = parseFloat((document.getElementById('in-sleep') as HTMLInputElement).value) || 0;
+    const waterVal = parseFloat((document.getElementById('in-water') as HTMLInputElement).value) || 0;
+    const gymVal = parseFloat((document.getElementById('in-gym') as HTMLInputElement).value) || 0;
+
+    systemData.push({ date: dateVal, code: codeVal, sleep: sleepVal, water: waterVal, gym: gymVal });
+    saveLedger();
+    renderEngines();
+    
+    // Pulse animation on HUD
+    hud.style.borderColor = '#00F0FF';
+    setTimeout(() => { hud.style.borderColor = 'rgba(255, 255, 255, 0.05)'; hud.classList.remove('active'); }, 500);
+  });
+
+  // Purge System
+  document.getElementById('btn-purge')!.addEventListener('click', () => {
+    if (confirm('CRITICAL WARNING: This will wipe your historical telemetry ledger. Proceed?')) {
+      systemData = [];
+      saveLedger();
+      renderEngines();
+    }
+  });
+});
