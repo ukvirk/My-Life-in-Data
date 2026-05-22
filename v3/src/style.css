@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-white min-h-screen font-sans antialiased overflow-x-hidden;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-surface backdrop-blur-md border border-white/10 shadow-glass rounded-2xl;
+  }
+  
+  .glass-input {
+    @apply bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:border-neon-cyan focus:shadow-neon-cyan transition-all duration-300 w-full;
+  }
+  
+  .neon-button {
+    @apply bg-white/5 border border-neon-cyan/50 text-neon-cyan px-6 py-2 rounded-lg font-semibold hover:bg-neon-cyan hover:text-background hover:shadow-neon-cyan transition-all duration-300;
+  }
+
+  .alert-input {
+    @apply border-alert-border bg-alert-subtle shadow-neon-pink focus:border-neon-pink focus:shadow-neon-pink;
+  }
+  
+  .alert-card {
+    @apply border-alert-border shadow-neon-pink;
+  }
+}
+
+/* Animations */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
