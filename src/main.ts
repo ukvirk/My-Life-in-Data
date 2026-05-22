@@ -1,76 +1,97 @@
 import './style.css';
-import { Chart, registerables, ChartOptions } from 'chart.js';
+import { Chart, registerables } from 'chart.js';
+import type { ChartOptions } from 'chart.js';
 
 Chart.register(...registerables);
 
-// --- 1. BOOT SEQUENCE SIMULATOR ---
-window.addEventListener('load', () => {
+// --- 1. SYSTEM BOOT SEQUENCER ---
+window.addEventListener('DOMContentLoaded', () => {
+  const loader = document.getElementById('boot-loader');
+  const appContainer = document.getElementById('app');
+
   setTimeout(() => {
-    document.getElementById('boot-loader')!.style.opacity = '0';
+    if (loader) loader.style.opacity = '0';
+    
     setTimeout(() => {
-      document.getElementById('boot-loader')!.style.display = 'none';
-      document.getElementById('app')!.classList.remove('hidden');
+      if (loader) loader.style.display = 'none';
+      if (appContainer) {
+        appContainer.classList.remove('hidden');
+        appContainer.style.opacity = '1';
+      }
       
-      // Trigger animations
+      // Activate animations sequentially
       document.querySelectorAll('.animate-in').forEach(el => {
         el.classList.add('active');
       });
       
       initializeCommandCenter();
-    }, 800);
-  }, 1200); // Simulating system uplink
+    }, 600);
+  }, 1000);
 });
 
-// --- 2. DATA ENGINE ---
+// --- 2. EXPERT TELEMETRY DATA GENERATION ---
 interface LifeTelemetry {
-  date: string; hoursCoded: number; sleepHours: number; waterLiters: number;
+  date: string;
+  hoursCoded: number;
+  sleepHours: number;
+  waterLiters: number;
 }
 
-const analyticsDataset: LifeTelemetry[] = Array.from({ length: 14 }, (_, i) => ({
-  date: `D-0${i + 1}`,
-  hoursCoded: 4 + Math.random() * 6,
-  sleepHours: 5 + Math.random() * 3,
-  waterLiters: 1.5 + Math.random() * 2.5,
+const analyticsDataset: LifeTelemetry[] = Array.from({ length: 12 }, (_, i) => ({
+  date: `D-${String(i + 1).padStart(2, '0')}`,
+  hoursCoded: 4 + Math.random() * 5,
+  sleepHours: 6 + Math.random() * 2,
+  waterLiters: 2 + Math.random() * 2,
 }));
 
-// --- 3. PRO GRAPHICS ENGINE ---
+// --- 3. CORE DISPLAY CONTROL ARCHITECTURE ---
 function initializeCommandCenter() {
-  // Global Chart config for a $1M look
   Chart.defaults.color = '#8A8D9E';
-  Chart.defaults.font.family = 'Inter';
+  Chart.defaults.font.family = "'Inter', sans-serif";
   
-  const gridConfig = {
+  const targetGridLines = {
     color: 'rgba(255, 255, 255, 0.03)',
-    drawBorder: false,
+    borderColor: 'transparent',
+    drawTicks: false
   };
 
-  const commonOptions: ChartOptions = {
-    responsive: true, maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
+  const sharedConfigOptions: ChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 6, font: { weight: 'bold' } } },
+      legend: {
+        position: 'top',
+        align: 'end',
+        labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 6, font: { size: 11, weight: '500' } }
+      },
       tooltip: {
-        backgroundColor: 'rgba(10, 11, 16, 0.9)', titleFont: { size: 13, family: 'Inter' },
-        bodyFont: { size: 12, family: 'Inter' }, padding: 12, cornerRadius: 8,
-        borderColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1
+        backgroundColor: '#0A0B10',
+        titleFont: { size: 12, family: 'Inter', weight: 'bold' },
+        bodyFont: { size: 12, family: 'Inter' },
+        padding: 12,
+        cornerRadius: 8,
+        borderColor: 'rgba(255, 255, 255, 0.08)',
+        borderWidth: 1,
+        displayColors: true
       }
+    },
+    scales: {
+      x: { grid: targetGridLines },
+      y: { grid: targetGridLines, beginAtZero: true }
     }
   };
 
-  // CHART 1: TIME MATRIX (WITH CANVAS GRADIENTS)
+  // --- RENDERING CONFIGURATION 1: GRAPHING LINE LINES ---
   const timeCanvas = document.getElementById('timeMatrixChart') as HTMLCanvasElement;
   if (timeCanvas) {
     const ctx = timeCanvas.getContext('2d')!;
-    
-    // Create glowing gradient for Coded Hours
-    const codeGradient = ctx.createLinearGradient(0, 0, 0, 400);
-    codeGradient.addColorStop(0, 'rgba(255, 26, 105, 0.5)');
-    codeGradient.addColorStop(1, 'rgba(255, 26, 105, 0.0)');
+    const codingFill = ctx.createLinearGradient(0, 0, 0, 300);
+    codingFill.addColorStop(0, 'rgba(255, 26, 105, 0.35)');
+    codingFill.addColorStop(1, 'rgba(255, 26, 105, 0.0)');
 
-    // Create glowing gradient for Sleep
-    const sleepGradient = ctx.createLinearGradient(0, 0, 0, 400);
-    sleepGradient.addColorStop(0, 'rgba(0, 240, 255, 0.3)');
-    sleepGradient.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
+    const sleepFill = ctx.createLinearGradient(0, 0, 0, 300);
+    sleepFill.addColorStop(0, 'rgba(0, 240, 255, 0.25)');
+    sleepFill.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
 
     new Chart(timeCanvas, {
       type: 'line',
@@ -78,58 +99,83 @@ function initializeCommandCenter() {
         labels: analyticsDataset.map(d => d.date),
         datasets: [
           {
-            label: 'System Build (Hrs)', data: analyticsDataset.map(d => d.hoursCoded),
-            borderColor: '#FF1A69', backgroundColor: codeGradient,
-            borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 6
+            label: 'Deep Coding (Hrs)',
+            data: analyticsDataset.map(d => d.hoursCoded),
+            borderColor: '#FF1A69',
+            backgroundColor: codingFill,
+            borderWidth: 2.5,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#FF1A69'
           },
           {
-            label: 'Recovery (Hrs)', data: analyticsDataset.map(d => d.sleepHours),
-            borderColor: '#00F0FF', backgroundColor: sleepGradient,
-            borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 6
+            label: 'Sleep Rest Cycle (Hrs)',
+            data: analyticsDataset.map(d => d.sleepHours),
+            borderColor: '#00F0FF',
+            backgroundColor: sleepFill,
+            borderWidth: 2.5,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#00F0FF'
           }
         ]
       },
-      options: { ...commonOptions, scales: { x: { grid: gridConfig }, y: { grid: gridConfig, beginAtZero: true } } }
+      options: sharedConfigOptions
     });
   }
 
-  // CHART 2: HYDROLOGY (NEON BARS)
+  // --- RENDERING CONFIGURATION 2: BAR TRACKS ---
   const waterCanvas = document.getElementById('hydrologyBarChart') as HTMLCanvasElement;
   if (waterCanvas) {
     const ctx = waterCanvas.getContext('2d')!;
-    const barGradient = ctx.createLinearGradient(0, 0, 0, 400);
-    barGradient.addColorStop(0, '#00F0FF');
-    barGradient.addColorStop(1, 'rgba(0, 240, 255, 0.1)');
+    const barFill = ctx.createLinearGradient(0, 0, 0, 300);
+    barFill.addColorStop(0, '#00F0FF');
+    barFill.addColorStop(1, 'rgba(0, 240, 255, 0.05)');
 
     new Chart(waterCanvas, {
       type: 'bar',
       data: {
         labels: analyticsDataset.map(d => d.date),
         datasets: [{
-          label: 'Volumetric Output (L)', data: analyticsDataset.map(d => d.waterLiters),
-          backgroundColor: barGradient, borderRadius: 6, borderSkipped: false
+          label: 'Fluid Consumption (Liters)',
+          data: analyticsDataset.map(d => d.waterLiters),
+          backgroundColor: barFill,
+          borderRadius: 4,
+          borderSkipped: false
         }]
       },
-      options: { ...commonOptions, plugins: { legend: { display: false } }, scales: { x: { grid: gridConfig }, y: { grid: gridConfig } } }
+      options: sharedConfigOptions
     });
   }
 
-  // CHART 3: MACRO DONUT (GLOWING SEGMENTS)
+  // --- RENDERING CONFIGURATION 3: MACRO DONUT ---
   const macroCanvas = document.getElementById('macrosDoughnutChart') as HTMLCanvasElement;
   if (macroCanvas) {
     new Chart(macroCanvas, {
       type: 'doughnut',
       data: {
-        labels: ['Protein', 'Carbs', 'Fats'],
+        labels: ['Protein', 'Carbohydrates', 'Essential Fats'],
         datasets: [{
-          data: [180, 220, 65],
-          backgroundColor: ['#00F0FF', '#FF1A69', '#8A2BE2'],
-          borderWidth: 0, hoverOffset: 10
+          data: [175, 240, 70],
+          backgroundColor: ['#FF1A69', '#00F0FF', '#8A2BE2'],
+          borderWidth: 0,
+          hoverOffset: 8
         }]
       },
       options: {
-        responsive: true, maintainAspectRatio: false, cutout: '75%',
-        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, color: '#FFFFFF' } } }
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '78%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { usePointStyle: true, boxWidth: 8, padding: 20, color: '#FFFFFF' }
+          }
+        }
       }
     });
   }
