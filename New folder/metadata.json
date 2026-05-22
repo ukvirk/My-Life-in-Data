@@ -1,0 +1,6 @@
+{
+  "name": "Apex Telemetry Command Center",
+  "description": "An enterprise-grade biological and work telemetry dashboard tracking rest cycles, deep work coding metrics, hydration levels, and physical performance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
