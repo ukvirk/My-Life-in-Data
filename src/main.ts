@@ -1,151 +1,136 @@
 import './style.css';
-import { Chart, registerables } from 'chart.js';
+import { Chart, registerables, ChartOptions } from 'chart.js';
 
 Chart.register(...registerables);
 
+// --- 1. BOOT SEQUENCE SIMULATOR ---
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('boot-loader')!.style.opacity = '0';
+    setTimeout(() => {
+      document.getElementById('boot-loader')!.style.display = 'none';
+      document.getElementById('app')!.classList.remove('hidden');
+      
+      // Trigger animations
+      document.querySelectorAll('.animate-in').forEach(el => {
+        el.classList.add('active');
+      });
+      
+      initializeCommandCenter();
+    }, 800);
+  }, 1200); // Simulating system uplink
+});
+
+// --- 2. DATA ENGINE ---
 interface LifeTelemetry {
-  date: string;
-  hoursCoded: number;
-  sleepHours: number;
-  gymYogaHours: number;
-  screenTime: number;
-  familyFriendsTime: number;
-  waterLiters: number;
-  proteinGrams: number;
-  carbsGrams: number;
-  fatGrams: number;
-  focusScore: number;
+  date: string; hoursCoded: number; sleepHours: number; waterLiters: number;
 }
 
-function generateDataStream(): LifeTelemetry[] {
-  return Array.from({ length: 7 }, (_, i) => {
-    const day = (i + 17).toString(); // Centered around mid-May 2026
-    return {
-      date: `May ${day}`,
-      hoursCoded: 5 + Math.random() * 4,
-      sleepHours: 6 + Math.random() * 2,
-      gymYogaHours: Math.random() > 0.3 ? 1 + Math.random() : 0.5,
-      screenTime: 4 + Math.random() * 3,
-      familyFriendsTime: 2 + Math.random() * 2,
-      waterLiters: 2.2 + Math.random() * 1.8,
-      proteinGrams: 130 + Math.random() * 40,
-      carbsGrams: 200 + Math.random() * 60,
-      fatGrams: 60 + Math.random() * 20,
-      focusScore: Math.floor(7 + Math.random() * 3)
-    };
-  });
-}
+const analyticsDataset: LifeTelemetry[] = Array.from({ length: 14 }, (_, i) => ({
+  date: `D-0${i + 1}`,
+  hoursCoded: 4 + Math.random() * 6,
+  sleepHours: 5 + Math.random() * 3,
+  waterLiters: 1.5 + Math.random() * 2.5,
+}));
 
-const operationalLog = generateDataStream();
-
-function bootstrapAnalytics() {
-  const commonGrid = {
-    grid: { color: 'rgba(51, 53, 74, 0.4)' },
-    ticks: { color: '#A6A8B8', font: { family: 'Montserrat', weight: 600 } }
+// --- 3. PRO GRAPHICS ENGINE ---
+function initializeCommandCenter() {
+  // Global Chart config for a $1M look
+  Chart.defaults.color = '#8A8D9E';
+  Chart.defaults.font.family = 'Inter';
+  
+  const gridConfig = {
+    color: 'rgba(255, 255, 255, 0.03)',
+    drawBorder: false,
   };
 
-  // --- TIME MATRIX CHART ---
-  const timeCtx = document.getElementById('timeMatrixChart') as HTMLCanvasElement;
-  if (timeCtx) {
-    const ctx = timeCtx.getContext('2d');
-    const gradCoded = ctx?.createLinearGradient(0, 0, 0, 300);
-    gradCoded?.addColorStop(0, 'rgba(255, 26, 105, 0.4)');
-    gradCoded?.addColorStop(1, 'rgba(255, 26, 105, 0.0)');
+  const commonOptions: ChartOptions = {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 6, font: { weight: 'bold' } } },
+      tooltip: {
+        backgroundColor: 'rgba(10, 11, 16, 0.9)', titleFont: { size: 13, family: 'Inter' },
+        bodyFont: { size: 12, family: 'Inter' }, padding: 12, cornerRadius: 8,
+        borderColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1
+      }
+    }
+  };
 
-    new Chart(timeCtx, {
+  // CHART 1: TIME MATRIX (WITH CANVAS GRADIENTS)
+  const timeCanvas = document.getElementById('timeMatrixChart') as HTMLCanvasElement;
+  if (timeCanvas) {
+    const ctx = timeCanvas.getContext('2d')!;
+    
+    // Create glowing gradient for Coded Hours
+    const codeGradient = ctx.createLinearGradient(0, 0, 0, 400);
+    codeGradient.addColorStop(0, 'rgba(255, 26, 105, 0.5)');
+    codeGradient.addColorStop(1, 'rgba(255, 26, 105, 0.0)');
+
+    // Create glowing gradient for Sleep
+    const sleepGradient = ctx.createLinearGradient(0, 0, 0, 400);
+    sleepGradient.addColorStop(0, 'rgba(0, 240, 255, 0.3)');
+    sleepGradient.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
+
+    new Chart(timeCanvas, {
       type: 'line',
       data: {
-        labels: operationalLog.map(d => d.date),
+        labels: analyticsDataset.map(d => d.date),
         datasets: [
-          { label: 'Hours Coded', data: operationalLog.map(d => d.hoursCoded), borderColor: '#FF1A69', backgroundColor: gradCoded || '#FF1A69', fill: true, tension: 0.4, borderWidth: 3 },
-          { label: 'Sleep', data: operationalLog.map(d => d.sleepHours), borderColor: '#06B6D4', backgroundColor: 'transparent', tension: 0.4, borderWidth: 3 },
-          { label: 'Screen Time', data: operationalLog.map(d => d.screenTime), borderColor: '#F59E0B', borderDash: [6, 6], fill: false, tension: 0.1 }
+          {
+            label: 'System Build (Hrs)', data: analyticsDataset.map(d => d.hoursCoded),
+            borderColor: '#FF1A69', backgroundColor: codeGradient,
+            borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 6
+          },
+          {
+            label: 'Recovery (Hrs)', data: analyticsDataset.map(d => d.sleepHours),
+            borderColor: '#00F0FF', backgroundColor: sleepGradient,
+            borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 6
+          }
         ]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#F4F6FF', font: { family: 'Montserrat', weight: 600 } } } },
-        scales: { x: commonGrid, y: commonGrid }
-      }
+      options: { ...commonOptions, scales: { x: { grid: gridConfig }, y: { grid: gridConfig, beginAtZero: true } } }
     });
   }
 
-  // --- MACRO BREAKDOWN CHART ---
-  const macroCtx = document.getElementById('macrosDoughnutChart') as HTMLCanvasElement;
-  if (macroCtx) {
-    new Chart(macroCtx, {
+  // CHART 2: HYDROLOGY (NEON BARS)
+  const waterCanvas = document.getElementById('hydrologyBarChart') as HTMLCanvasElement;
+  if (waterCanvas) {
+    const ctx = waterCanvas.getContext('2d')!;
+    const barGradient = ctx.createLinearGradient(0, 0, 0, 400);
+    barGradient.addColorStop(0, '#00F0FF');
+    barGradient.addColorStop(1, 'rgba(0, 240, 255, 0.1)');
+
+    new Chart(waterCanvas, {
+      type: 'bar',
+      data: {
+        labels: analyticsDataset.map(d => d.date),
+        datasets: [{
+          label: 'Volumetric Output (L)', data: analyticsDataset.map(d => d.waterLiters),
+          backgroundColor: barGradient, borderRadius: 6, borderSkipped: false
+        }]
+      },
+      options: { ...commonOptions, plugins: { legend: { display: false } }, scales: { x: { grid: gridConfig }, y: { grid: gridConfig } } }
+    });
+  }
+
+  // CHART 3: MACRO DONUT (GLOWING SEGMENTS)
+  const macroCanvas = document.getElementById('macrosDoughnutChart') as HTMLCanvasElement;
+  if (macroCanvas) {
+    new Chart(macroCanvas, {
       type: 'doughnut',
       data: {
         labels: ['Protein', 'Carbs', 'Fats'],
         datasets: [{
-          data: [160, 240, 70],
-          backgroundColor: ['#10B981', '#3B82F6', '#EC4899'],
-          borderWidth: 4,
-          borderColor: '#1E2030'
+          data: [180, 220, 65],
+          backgroundColor: ['#00F0FF', '#FF1A69', '#8A2BE2'],
+          borderWidth: 0, hoverOffset: 10
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom', labels: { color: '#F4F6FF', font: { family: 'Montserrat', weight: 600 } } } }
+        responsive: true, maintainAspectRatio: false, cutout: '75%',
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, color: '#FFFFFF' } } }
       }
     });
   }
-
-  // --- HYDROLOGY LOG CHART ---
-  const waterCtx = document.getElementById('hydrologyBarChart') as HTMLCanvasElement;
-  if (waterCtx) {
-    new Chart(waterCtx, {
-      type: 'bar',
-      data: {
-        labels: operationalLog.map(d => d.date),
-        datasets: [{
-          label: 'Liters',
-          data: operationalLog.map(d => d.waterLiters),
-          backgroundColor: '#06B6D4',
-          borderRadius: 8
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { x: commonGrid, y: commonGrid }
-      }
-    });
-  }
-
-  // --- BIOMETRIC PERFORMANCE INDEX ---
-  const perfCtx = document.getElementById('performanceScatterChart') as HTMLCanvasElement;
-  if (perfCtx) {
-    new Chart(perfCtx, {
-      type: 'scatter',
-      data: {
-        datasets: [{
-          label: 'Gym + Family Hours vs Focus Score',
-          data: operationalLog.map(d => ({ x: d.gymYogaHours + d.familyFriendsTime, y: d.focusScore })),
-          backgroundColor: '#FF1A69',
-          pointRadius: 8,
-          pointHoverRadius: 12
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#F4F6FF', font: { family: 'Montserrat', weight: 600 } } } },
-        scales: {
-          x: { ...commonGrid, title: { display: true, text: 'Recovery Output (Hours)', color: '#A6A8B8', font: { family: 'Montserrat', weight: 600 } } },
-          y: { ...commonGrid, title: { display: true, text: 'Focus Score (1-10)', color: '#A6A8B8', font: { family: 'Montserrat', weight: 600 } } }
-        }
-      }
-    });
-  }
-}
-
-// FORCE RUN AFTER ELEMENT TREE MOUNTS
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', bootstrapAnalytics);
-} else {
-  bootstrapAnalytics();
 }
