@@ -3,32 +3,75 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Enterprise Analytics Dashboard</title>
+    <title>Elite Telemetry Console</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
 
-    <div id="boot-loader">
-      <div class="loader-pulse"></div>
-      <p>INITIALIZING TELEMETRY...</p>
+    <div id="identity-gate" class="overlay-matrix">
+      <div class="glass-panel auth-panel">
+        <h2>UPLINK REQUIRED</h2>
+        <p>Enter Operator Designation</p>
+        <input type="text" id="operator-name-input" placeholder="e.g. Manto" autocomplete="off" />
+        <button id="init-system-btn">INITIALIZE CORE</button>
+      </div>
     </div>
 
-    <div id="app" class="hidden" style="opacity: 0;">
+    <div id="command-hud" class="floating-hud hidden">
+      <div class="hud-header">
+        <h3>Live Input Deck</h3>
+        <button id="close-hud-btn">X</button>
+      </div>
+      <div class="hud-body">
+        <div class="input-group">
+          <label>System Build / Coding (Hrs)</label>
+          <input type="range" id="input-coding" min="0" max="16" step="0.5" value="0">
+          <span class="value-display" id="val-coding">0</span>
+        </div>
+        <div class="input-group">
+          <label>Rest Cycle / Sleep (Hrs)</label>
+          <input type="range" id="input-sleep" min="0" max="12" step="0.5" value="0">
+          <span class="value-display" id="val-sleep">0</span>
+        </div>
+        <div class="input-group">
+          <label>Physical Routine / Gym (Hrs)</label>
+          <input type="range" id="input-gym" min="0" max="4" step="0.25" value="0">
+          <span class="value-display" id="val-gym">0</span>
+        </div>
+        <div class="input-group">
+          <label>Hydrology (Liters)</label>
+          <input type="range" id="input-water" min="0" max="6" step="0.5" value="0">
+          <span class="value-display" id="val-water">0</span>
+        </div>
+        <div class="input-group">
+          <label>Protein Density (Grams)</label>
+          <input type="number" id="input-protein" min="0" max="300" value="0">
+        </div>
+        <div class="input-group">
+          <label>Carbohydrate Mass (Grams)</label>
+          <input type="number" id="input-carbs" min="0" max="500" value="0">
+        </div>
+        <div class="input-group">
+          <label>Kinship / Family (Minutes)</label>
+          <input type="number" id="input-family" min="0" max="600" value="0">
+        </div>
+      </div>
+    </div>
+
+    <div id="app" class="hidden">
       <aside class="dashboard-sidebar">
         <header class="profile-header">
-          <h2>Telemetry</h2>
+          <h2 id="display-operator">GUEST</h2>
           <div class="version-tag">OS V_2.0.26</div>
         </header>
         <div class="profile-meta-deck">
-          <div class="meta-stat-strip">
-            <span class="label">Uplink Status:</span>
-            <span class="status-indicator">Stabilized</span>
-          </div>
-          <div class="meta-stat-strip">
-            <span class="label">System Core:</span>
-            <span class="value" style="color:#FFFFFF;">Operational</span>
+          <button id="open-hud-btn" class="action-btn">OPEN COMMAND HUD</button>
+          <div class="meta-stat-strip" style="margin-top: 20px;">
+            <span class="label">System State:</span>
+            <span class="status-indicator">Synched</span>
           </div>
         </div>
       </aside>
@@ -36,43 +79,36 @@
       <main class="bento-workspace">
         <header class="workspace-header">
           <h1>Command Center</h1>
-          <p>Real-time system telemetry and biometric tracking logs.</p>
+          <p>Real-time telemetry and biometric mutation tracking.</p>
         </header>
         
         <div class="bento-grid-container">
-          <div class="bento-card span-double animate-in">
+          <div class="bento-card span-double">
             <div class="card-header-block">
               <h3>Time Allocation Matrix</h3>
-              <p>Chronological work variables and rest cycles</p>
+              <p>Deep Work vs Recovery vs Physical</p>
             </div>
-            <div class="chart-canvas-wrapper">
-              <canvas id="timeMatrixChart"></canvas>
-            </div>
+            <div class="chart-canvas-wrapper"><canvas id="timeMatrixChart"></canvas></div>
           </div>
 
-          <div class="bento-card animate-in">
+          <div class="bento-card">
             <div class="card-header-block">
-              <h3>Hydration Telemetry</h3>
-              <p>Volumetric fluid tracking engine</p>
+              <h3>Hydration Log</h3>
+              <p>Volumetric Output</p>
             </div>
-            <div class="chart-canvas-wrapper">
-              <canvas id="hydrologyBarChart"></canvas>
-            </div>
+            <div class="chart-canvas-wrapper"><canvas id="hydrologyBarChart"></canvas></div>
           </div>
 
-          <div class="bento-card animate-in">
+          <div class="bento-card">
             <div class="card-header-block">
-              <h3>Macro Composition</h3>
-              <p>Caloric split metrics</p>
+              <h3>Macro Engine</h3>
+              <p>Nutritional Density Split</p>
             </div>
-            <div class="chart-canvas-wrapper">
-              <canvas id="macrosDoughnutChart"></canvas>
-            </div>
+            <div class="chart-canvas-wrapper"><canvas id="macrosDoughnutChart"></canvas></div>
           </div>
         </div>
       </main>
     </div>
-
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
