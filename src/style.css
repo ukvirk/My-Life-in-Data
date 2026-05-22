@@ -32,3 +32,4 @@ body, html { height: 100%; width: 100%; font-family: var(--font-primary); backgr
   .bento-grid-container { grid-template-columns: 1fr; }
   .span-double, .span-full { grid-column: span 1; }
 }
+canvas { transition: all 0.3s ease-in-out; }
